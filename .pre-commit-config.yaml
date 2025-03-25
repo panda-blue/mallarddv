@@ -1,0 +1,27 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.3.0
+  hooks:
+  - id: check-yaml
+  - id: end-of-file-fixer
+    exclude: .csv$|.svg$|.xml$
+  - id: trailing-whitespace
+- repo: https://github.com/psf/black
+  rev: 22.10.0
+  hooks:
+  - id: black
+- repo: local
+  hooks:
+    - id: coverage-pytest-check
+      name: coverage-pytest-check
+      entry: coverage run -m pytest -xvs
+      language: system
+      pass_filenames: false
+      always_run: true
+- repo: https://github.com/Weird-Sheep-Labs/coverage-pre-commit
+  rev: 0.1.1
+  hooks:
+    - id: coverage-xml
+      args: ["-o", "reports/coverage/coverage.xml"]
+    - id: coverage-badge
+      args: ["-i", "reports/coverage/coverage.xml", "-o", "reports/coverage/coverage-badge.svg"]

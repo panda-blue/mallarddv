@@ -1,0 +1,16 @@
+source_table,source_field,target_table,target_field,group_name,position,raw,transformation,transfer_type
+customer,id,hub_customer,id_bk,customer,1,false,,bk
+customer,first_name,hsat_customer_details,first_name,customer_details,1,false,,f
+customer,last_name,hsat_customer_details,last_name,customer_details,2,false,,f
+customer,email,hsat_customer_details,email,customer_details,3,false,,f
+customer,customer_hk,hsat_customer_details,customer,customer_details,0,false,,sat_delta
+customer,referenced_by,hub_customer,id_bk,referencer,1,false,,bk
+customer,customer,link_customer__referencer,customer_hk,l_reference,1,false,,ll
+customer,referencer,link_customer__referencer,referencer_hk,l_reference,2,false,,ll
+customer,reference_code,link_customer__referencer,reference_code_dk,l_reference,3,false,,dk
+customer,l_reference_hk,lsat_customer__referencer,customer__referencer,s_reference,1,false,,sat_delta
+product,id,hub_product,id_cbk,product,1,false,,bk
+product,base_product,hub_product,product_type_cbk,product,2,true,,bk
+product,product_hk,hsat_product_details,product,product_details,0,false,,sat_full
+product,name,hsat_product_details,name,product_details,1,false,trim(#),f
+product,description,hsat_product_details,description,product_details,2,false,trim(#),f
