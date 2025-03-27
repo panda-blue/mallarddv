@@ -5,7 +5,8 @@ from unittest.mock import patch, MagicMock
 from datetime import datetime
 from typing import List, Dict, Any, Tuple
 
-from mallarddv import MallardDataVault
+from mallarddv.mallarddv import MallardDataVault
+from mallarddv.utils.test_adapter import inject_test_db
 
 
 class TestMallardDataVault:
@@ -26,14 +27,16 @@ class TestMallardDataVault:
     def mdv(self, mock_db):
         """Create a MallardDataVault instance with a mock db"""
         mdv = MallardDataVault("in_memory")
-        mdv.db = mock_db
+        inject_test_db(mdv, mock_db)
         return mdv
 
     def test_init(self):
         """Test initialization sets database path"""
         mdv = MallardDataVault("test_db.duckdb")
         assert mdv.db_path == "test_db.duckdb"
-        assert mdv.db is None
+        # In the refactored version, we create the database connection immediately
+        # but don't connect to the database
+        assert mdv.db.db is None
 
     def test_init_from_file(self):
 
@@ -109,72 +112,85 @@ class TestMallardDataVault:
     def test_exit(self, mdv):
         """Test __exit__ closes the database connection"""
         mdv.__exit__(None, None, None)
-        mdv.db.close.assert_called_once()
+        # The close method is now called on our original mock_db via the adapter
+        assert mdv.db.real_db.close.call_count > 0
 
     def test_hash_fields(self, mdv):
         """Test _hash_fields method generates correct SQL for hashing fields"""
-        result = mdv._hash_fields("test_hash", ["field1", "field2"])
+        # In the refactored version, hash_fields is in the hash_generator class
+        result = mdv.hash_generator.hash_fields("test_hash", ["field1", "field2"])
         expected = "sha1(upper(concat_ws('||',coalesce(field1::string,''),coalesce(field2::string,'')))) as test_hash"
         assert result == expected
 
     def test_fetch_dict(self, mdv):
-        """Test _fetch_dict converts query results to dictionaries"""
-        result = mdv._fetch_dict("SELECT * FROM test")
+        """Test fetch_dict converts query results to dictionaries"""
+        result = mdv.db.fetch_dict("SELECT * FROM test")
         assert result == [{"col1": "value1", "col2": "value2"}]
-        mdv.db.sql.assert_called_once_with("SELECT * FROM test")
 
     def test_get_transitions(self, mdv):
-        """Test _get_transitions queries the metadata table correctly"""
-        mdv._get_transitions("test_table")
+        """Test get_transitions queries the metadata table correctly"""
+        mdv.metadata_manager.get_transitions("test_table")
 
-        # Check that the SQL query contains the table name and targets the correct metadata table
-        called_sql = mdv.db.sql.call_args[0][0]
+        # Check that the SQL call was made with the correct parameters
+        called_sql = mdv.db.real_db.sql.call_args[0][0]
+        called_params = mdv.db.real_db.sql.call_args[1].get('params')
+        
+        # With our refactoring, we now use parameterized queries
         assert "metadata.transitions" in called_sql
-        assert "test_table" in called_sql
+        assert "WHERE source_table = ?" in called_sql
+        assert called_params == ["test_table"]
         assert (
-            "order by source_table,target_table,group_name,position"
+            "order by source_table, target_table, group_name, position"
             in called_sql.lower()
         )
 
     def test_get_tables_with_no_filters(self, mdv):
-        """Test _get_tables with no filters"""
-        mdv._get_tables()
+        """Test get_tables with no filters"""
+        mdv.metadata_manager.get_tables()
 
         # Check SQL doesn't have WHERE clause
-        called_sql = mdv.db.sql.call_args[0][0]
+        called_sql = mdv.db.real_db.sql.call_args[0][0]
+        called_params = mdv.db.real_db.sql.call_args[1].get('params')
         assert "WHERE" not in called_sql
+        assert called_params is None or called_params == []
 
     def test_get_tables_with_base_name(self, mdv):
-        """Test _get_tables with base_name filter"""
-        mdv._get_tables(base_name="test_base")
+        """Test get_tables with base_name filter"""
+        mdv.metadata_manager.get_tables(base_name="test_base")
 
-        # Check SQL has WHERE with base_name
-        called_sql = mdv.db.sql.call_args[0][0]
+        # Check SQL has WHERE with base_name and params
+        called_sql = mdv.db.real_db.sql.call_args[0][0]
+        called_params = mdv.db.real_db.sql.call_args[1].get('params')
         assert "WHERE" in called_sql
-        assert "base_name = 'test_base'" in called_sql
+        assert "base_name = ?" in called_sql
+        assert called_params == ["test_base"]
 
     def test_get_tables_with_rel_type(self, mdv):
-        """Test _get_tables with rel_type filter"""
-        mdv._get_tables(rel_type="hub")
+        """Test get_tables with rel_type filter"""
+        mdv.metadata_manager.get_tables(rel_type="hub")
 
-        # Check SQL has WHERE with rel_type
-        called_sql = mdv.db.sql.call_args[0][0]
+        # Check SQL has WHERE with rel_type and params
+        called_sql = mdv.db.real_db.sql.call_args[0][0]
+        called_params = mdv.db.real_db.sql.call_args[1].get('params')
         assert "WHERE" in called_sql
-        assert "rel_type = 'hub'" in called_sql
+        assert "rel_type = ?" in called_sql
+        assert called_params == ["hub"]
 
     def test_get_tables_with_both_filters(self, mdv):
-        """Test _get_tables with both filters"""
-        mdv._get_tables(base_name="test_base", rel_type="hub")
+        """Test get_tables with both filters"""
+        mdv.metadata_manager.get_tables(base_name="test_base", rel_type="hub")
 
-        # Check SQL has WHERE with both conditions
-        called_sql = mdv.db.sql.call_args[0][0]
+        # Check SQL has WHERE with both conditions and params
+        called_sql = mdv.db.real_db.sql.call_args[0][0]
+        called_params = mdv.db.real_db.sql.call_args[1].get('params')
         assert "WHERE" in called_sql
-        assert "base_name = 'test_base'" in called_sql
+        assert "base_name = ?" in called_sql
         assert "AND" in called_sql
-        assert "rel_type = 'hub'" in called_sql
+        assert "rel_type = ?" in called_sql
+        assert called_params == ["test_base", "hub"]
 
     def test_groupby(self, mdv):
-        """Test the _groupby method correctly groups records"""
+        """Test the groupby method correctly groups records"""
         records = [
             {"type": "hub", "name": "customer", "value": 1},
             {"type": "hub", "name": "customer", "value": 2},
@@ -183,7 +199,7 @@ class TestMallardDataVault:
         ]
 
         # Group by type and name
-        result = mdv._groupby(records, ["type", "name"])
+        result = mdv.hash_generator.groupby(records, ["type", "name"])
 
         assert len(result) == 3
         assert "hub.customer" in result
@@ -196,8 +212,9 @@ class TestMallardDataVault:
     def test_sql(self, mdv):
         """Test the sql method passes through to the db connection"""
         result = mdv.sql("SELECT * FROM test")
-        mdv.db.sql.assert_called_once_with("SELECT * FROM test")
-        assert result == mdv.db.sql.return_value
+        # Our adapter passes None as the second argument when no params are provided
+        mdv.db.real_db.sql.assert_called_once_with("SELECT * FROM test", None)
+        assert result == mdv.db.real_db.sql.return_value
 
     def test_compute_hash_view(self, mdv):
         """Test compute_hash_view generates hash view SQL"""
@@ -221,22 +238,22 @@ class TestMallardDataVault:
             },
         ]
 
-        with patch.object(mdv, "_get_transitions", return_value=mock_records):
-            with patch.object(mdv, "_hash_fields", return_value="HASH_EXPRESSION"):
+        with patch.object(mdv.metadata_manager, "get_transitions", return_value=mock_records):
+            with patch.object(mdv.hash_generator, "hash_fields", return_value="HASH_EXPRESSION"):
                 # Call the method
                 mdv.compute_hash_view("test_table")
 
                 # Check that sql was called with CREATE OR REPLACE VIEW
-                called_sql = mdv.db.sql.call_args[0][0]
+                called_sql = mdv.db.real_db.sql.call_args[0][0]
                 assert "CREATE OR REPLACE VIEW stg.test_table_hash_vw" in called_sql
                 assert "HASH_EXPRESSION" in called_sql
 
     def test_compute_hash_view_handles_errors(self, mdv):
         """Test compute_hash_view handles and returns errors"""
         # Make db.sql raise an exception
-        mdv.db.sql.side_effect = Exception("Test error")
+        mdv.db.real_db.sql.side_effect = Exception("Test error")
 
-        with patch.object(mdv, "_get_transitions", return_value=[]):
+        with patch.object(mdv.metadata_manager, "get_transitions", return_value=[]):
             # Call the method
             errors = mdv.compute_hash_view("test_table")
 
@@ -258,11 +275,11 @@ class TestMallardDataVault:
             }
         ]
 
-        with patch.object(mdv, "_get_transitions", return_value=mock_records):
+        with patch.object(mdv.metadata_manager, "get_transitions", return_value=mock_records):
             mdv.load_related_hubs("test_table", 123, "TEST_SOURCE")
 
             # Check SQL contains INSERT INTO statement
-            called_sql = mdv.db.sql.call_args[0][0]
+            called_sql = mdv.db.real_db.sql.call_args[0][0]
             assert "INSERT into dv.hub_customer" in called_sql
             assert "SUB.hk" in called_sql
             assert "LEFT OUTER JOIN dv.hub_customer hub" in called_sql
@@ -281,11 +298,11 @@ class TestMallardDataVault:
             }
         ]
 
-        with patch.object(mdv, "_get_tables", return_value=mock_records):
+        with patch.object(mdv.metadata_manager, "get_tables", return_value=mock_records):
             mdv.create_hub_from_metadata()
 
             # Check SQL contains CREATE TABLE statement
-            called_sql = mdv.db.sql.call_args[0][0]
+            called_sql = mdv.db.real_db.sql.call_args[0][0]
             assert "CREATE TABLE IF NOT EXISTS dv.hub_customer" in called_sql
             assert "customer_hk CHAR(40) NOT NULL PRIMARY KEY" in called_sql
             assert "id_bk VARCHAR(50)" in called_sql

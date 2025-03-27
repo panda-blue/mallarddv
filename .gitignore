@@ -178,3 +178,4 @@ test/*.db
 
 # vscode
 .vscode
+.history

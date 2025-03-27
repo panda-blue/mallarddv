@@ -3,7 +3,8 @@ import duckdb
 from datetime import datetime
 from typing import Dict, List, Any
 
-from mallarddv import MallardDataVault
+from mallarddv.mallarddv import MallardDataVault
+from mallarddv.utils.test_adapter import inject_test_db
 
 
 class TestMallardDataVaultIntegration:
@@ -103,7 +104,7 @@ class TestMallardDataVaultIntegration:
     def mdv(self, setup_db):
         """Create a MallardDataVault with the test database"""
         mdv = MallardDataVault(":memory:")
-        mdv.db = setup_db
+        inject_test_db(mdv, setup_db)
         return mdv
 
     def test_create_hub_from_metadata_integration(self, mdv):
