@@ -17,6 +17,8 @@ class SchemaManager:
     Manages database schemas and tables for MallardDataVault.
     """
     
+    schema_list = ["stg", "dv", "bv", "dm", "metadata"]
+
     def __init__(self, db: DatabaseConnection):
         """
         Initialize with database connection.
@@ -38,7 +40,7 @@ class SchemaManager:
         """
         errors = []
         
-        for schema in ["stg", "dv", "bv", "dm", "metadata"]:
+        for schema in self.schema_list:
             sql_str = SQLTemplates.CREATE_SCHEMA.format(schema=schema)
             if verbose:
                 print(sql_str)

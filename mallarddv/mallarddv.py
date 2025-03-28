@@ -144,18 +144,7 @@ class MallardDataVault:
                     verbose=verbose
                 )
             )
-            
-            # Apply staging view scripts
-            all_records = self.metadata_manager.get_tables()
-            errors.extend(
-                self.schema_manager.apply_script_from_metadata(
-                    rel_type="stg_vw",
-                    scripts_path=self.scripts_path,
-                    metadata_records=all_records,
-                    verbose=verbose
-                )
-            )
-            
+              
             # Create hubs
             errors.extend(self.hub_manager.create_hub_from_metadata(verbose=verbose))
             
@@ -167,6 +156,18 @@ class MallardDataVault:
             
             # Create current views
             errors.extend(self.satellite_manager.create_current_sat_from_metadata(verbose=verbose))
+
+            # Apply view scripts in all schemas
+            all_records = self.metadata_manager.get_tables()
+            for schema in self.schema_manager.schema_list:
+                errors.extend(
+                    self.schema_manager.apply_script_from_metadata(
+                        rel_type=f"{schema}_vw",
+                        scripts_path=self.scripts_path,
+                        metadata_records=all_records,
+                        verbose=verbose
+                    )
+                )
         
         return errors
     

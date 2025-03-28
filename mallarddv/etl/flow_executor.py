@@ -121,17 +121,30 @@ class FlowExecutor:
         # Load file to staging if provided
         if file_path:
             if verbose:
-                print("Load new data")
-            errors.extend(
-                self.etl_service.load_file_to_staging(
-                    source_table=source_table,
-                    file_path=file_path,
-                    verbose=verbose
-                )
-            )
-            if errors:
-                self._register_run_end(source_table, run_id, file_path, "failure", errors)
+                print("Check if source table should be loaded")
+            
+            try: 
+                to_load = self.metadata_manager.check_source_for_ingestion(source_table)
+            except Exception as ex:
+                errors.append(("Check source for ingestion", str(ex)))
                 return errors
+
+            if verbose:
+                print(f"source {'table' if to_load else 'view'} {source_table} will {'' if to_load else 'not '}loaded with new data")
+
+            if to_load:
+                if verbose:
+                    print("Load new data")
+                errors.extend(
+                    self.etl_service.load_file_to_staging(
+                        source_table=source_table,
+                        file_path=file_path,
+                        verbose=verbose
+                    )
+                )
+                if errors:
+                    self._register_run_end(source_table, run_id, file_path, "failure", errors)
+                    return errors
         
         # Compute hash view
         if verbose:

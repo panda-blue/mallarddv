@@ -73,6 +73,15 @@ class SQLTemplates:
     AND source_table = ? 
     AND status = ?
     """
+
+    CHECK_SOURCE_FOR_INGESTION = """
+    SELECT
+        rel_type = 'stg' AS to_load
+    FROM metadata.tables
+    WHERE base_name = ?
+    ORDER BY 1 ASC
+    LIMIT 1
+    """
     
     GET_RUN_ID = """
     SELECT 

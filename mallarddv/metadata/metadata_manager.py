@@ -196,6 +196,26 @@ class MetadataManager:
         )
         return len(result) > 0
     
+    def check_source_for_ingestion(
+        self, source_table
+    ) -> bool:
+        """
+        Check if the source_table is a staging table to be loaded from file
+
+        Args:
+            source_table: Source table name
+
+        Returns:
+            True if the source_table should be loaded from file
+        """
+
+        result = self.db.fetch_dict(
+            SQLTemplates.CHECK_SOURCE_FOR_INGESTION,
+            params=[source_table],
+        )
+
+        return result[0]["to_load"]
+
     def register_run_info(
         self,
         source_table: str,
