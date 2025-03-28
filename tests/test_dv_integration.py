@@ -3,7 +3,8 @@ import duckdb
 from datetime import datetime
 from typing import Dict, List, Any
 
-from mallarddv import MallardDataVault
+from mallarddv.mallarddv import MallardDataVault
+from mallarddv.utils.test_adapter import inject_test_db
 
 
 class TestMallardDataVaultIntegration:
@@ -103,7 +104,7 @@ class TestMallardDataVaultIntegration:
     def mdv(self, setup_db):
         """Create a MallardDataVault with the test database"""
         mdv = MallardDataVault(":memory:")
-        mdv.db = setup_db
+        inject_test_db(mdv, setup_db)
         return mdv
 
     def test_create_hub_from_metadata_integration(self, mdv):
@@ -231,19 +232,19 @@ class TestMallardDataVaultIntegration:
         assert len(cv_rows) == 2
 
     def test_mdv_automated_creation(self):
-        with MallardDataVault("./test/test.db", scripts_path="./test/models") as mdv:
+        with MallardDataVault("./demo/demo.db", scripts_path="./demo/models") as mdv:
             errors = mdv.init_mallard_db(
                 meta_only=False,
-                meta_transitions_path="./test/transitions.csv",
-                meta_tables_path="./test/tables.csv",
+                meta_transitions_path="./demo/transitions.csv",
+                meta_tables_path="./demo/tables.csv",
                 verbose=True,
             )
             assert len(errors) == 0
 
     def test_mdv_automated_run(self):
-        with MallardDataVault("test/test.db", scripts_path="./test/models") as mdv:
+        with MallardDataVault("demo/demo.db", scripts_path="./demo/models") as mdv:
             errors = mdv.execute_flow(
-                "customer", f"test-customer", f"test/data/customer.csv", verbose=True
+                "customer", f"demo-customer", f"demo/data/customer.csv", verbose=True
             )
             assert len(errors) == 0
 

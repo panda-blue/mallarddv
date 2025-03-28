@@ -174,7 +174,8 @@ cython_debug/
 .pypirc
 
 # duckdb test database
-test/*.db
+demo/*.db
 
 # vscode
 .vscode
+.history

@@ -54,21 +54,22 @@ pre-commit install
 from mallarddv import MallardDataVault
 
 # Open a connection to the database
-with MallardDataVault("./test/test.db", scripts_path="./test/models") as mdv:
+with MallardDataVault("./demo/demo.db", scripts_path="./demo/models") as mdv:
     errors = []
 
     # initialise database with information from transitions and tables csv.
     errors.extend(mdv.init_mallard_db(
         meta_only=False,
-        meta_transitions_path="./test/transitions.csv",
-        meta_tables_path="./test/tables.csv",
-        verbose=True,
+        meta_transitions_path="./demo/transitions.csv",
+        meta_tables_path="./demo/tables.csv",
+        verbose=False,
     ))
 
     # execute the customer demo flow
     errors.extend(mdv.execute_flow(
-                "customer", f"test-customer", f"test/data/customer.csv", verbose=True
+                "customer", f"demo-customer", f"demo/data/customer.csv",force_load=False, verbose=False
             ))
+
 
 ```
 
