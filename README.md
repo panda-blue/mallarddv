@@ -175,8 +175,6 @@ example:
 
 ## 🪲 Testing
 
-![coverage badge](/reports/coverage/coverage-badge.svg)
-
 Run the tests using coverage and pytest:
 
 ```bash
