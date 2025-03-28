@@ -232,19 +232,19 @@ class TestMallardDataVaultIntegration:
         assert len(cv_rows) == 2
 
     def test_mdv_automated_creation(self):
-        with MallardDataVault("./test/test.db", scripts_path="./test/models") as mdv:
+        with MallardDataVault("./demo/demo.db", scripts_path="./demo/models") as mdv:
             errors = mdv.init_mallard_db(
                 meta_only=False,
-                meta_transitions_path="./test/transitions.csv",
-                meta_tables_path="./test/tables.csv",
+                meta_transitions_path="./demo/transitions.csv",
+                meta_tables_path="./demo/tables.csv",
                 verbose=True,
             )
             assert len(errors) == 0
 
     def test_mdv_automated_run(self):
-        with MallardDataVault("test/test.db", scripts_path="./test/models") as mdv:
+        with MallardDataVault("demo/demo.db", scripts_path="./demo/models") as mdv:
             errors = mdv.execute_flow(
-                "customer", f"test-customer", f"test/data/customer.csv", verbose=True
+                "customer", f"demo-customer", f"demo/data/customer.csv", verbose=True
             )
             assert len(errors) == 0
 

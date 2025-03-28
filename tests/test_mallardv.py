@@ -40,22 +40,22 @@ class TestMallardDataVault:
 
     def test_init_from_file(self):
 
-        db_path = "./test/test.db"
+        db_path = "./demo/demo.db"
         if os.path.isfile(db_path):
             os.remove(db_path)
 
-        with MallardDataVault(db_path, "./test/models/") as mdv:
+        with MallardDataVault(db_path, "./demo/models/") as mdv:
             res = mdv.init_mallard_db(
                 False,
-                meta_tables_path="./test/tables.csv",
-                meta_transitions_path="./test/transitions.csv",
+                meta_tables_path="./demo/tables.csv",
+                meta_transitions_path="./demo/transitions.csv",
             )
 
             assert len(res) == 0
 
     def test_hash_view_generation_from_file(self):
-        db_path = "./test/test.db"
-        with MallardDataVault(db_path, "./test/models/") as mdv:
+        db_path = "./demo/demo.db"
+        with MallardDataVault(db_path, "./demo/models/") as mdv:
             res = []
 
             for source_table in ["customer", "product"]:
@@ -64,37 +64,37 @@ class TestMallardDataVault:
             assert len(res) == 0
 
     def test_load_related_hubs_from_file(self):
-        db_path = "./test/test.db"
+        db_path = "./demo/demo.db"
 
-        with MallardDataVault(db_path, "./test/models/") as mdv:
+        with MallardDataVault(db_path, "./demo/models/") as mdv:
             res = []
 
             for source_table in ["customer", "product"]:
-                res.extend(mdv.load_related_hubs(source_table, 1, "test-customer"))
+                res.extend(mdv.load_related_hubs(source_table, 1, "demo-customer"))
 
             assert len(res) == 0
 
     def test_load_related_links_from_file(self):
-        db_path = "./test/test.db"
+        db_path = "./demo/demo.db"
 
-        with MallardDataVault(db_path, "./test/models/") as mdv:
+        with MallardDataVault(db_path, "./demo/models/") as mdv:
             res = []
 
             for source_table in ["customer", "product"]:
-                res.extend(mdv.load_related_links(source_table, 1, "test-customer"))
-                res.extend(mdv.load_related_links(source_table, 1, "test-customer"))
+                res.extend(mdv.load_related_links(source_table, 1, "demo-customer"))
+                res.extend(mdv.load_related_links(source_table, 1, "demo-customer"))
 
             assert len(res) == 0
 
     def test_load_related_sats_from_file(self):
-        db_path = "./test/test.db"
+        db_path = "./demo/demo.db"
 
-        with MallardDataVault(db_path, "./test/models/") as mdv:
+        with MallardDataVault(db_path, "./demo/models/") as mdv:
             res = []
 
             for source_table in ["customer", "product"]:
-                res.extend(mdv.load_related_sats(source_table, 1, "test-customer"))
-                res.extend(mdv.load_related_sats(source_table, 1, "test-customer"))
+                res.extend(mdv.load_related_sats(source_table, 1, "demo-customer"))
+                res.extend(mdv.load_related_sats(source_table, 1, "demo-customer"))
 
             assert len(res) == 0
 
