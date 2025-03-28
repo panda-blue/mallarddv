@@ -1,6 +1,7 @@
 """
 Flow execution for MallardDataVault.
 """
+
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
@@ -22,7 +23,7 @@ class FlowExecutor:
     """
     Orchestrates complete data vault loading processes.
     """
-    
+
     def __init__(
         self,
         db: DatabaseConnection,
@@ -32,11 +33,11 @@ class FlowExecutor:
         hub_manager: DVHubManager,
         link_manager: DVLinkManager,
         satellite_manager: DVSatelliteManager,
-        etl_service: ETLService
+        etl_service: ETLService,
     ):
         """
         Initialize with all required services.
-        
+
         Args:
             db: Database connection
             metadata_manager: Metadata manager
@@ -55,7 +56,7 @@ class FlowExecutor:
         self.link_manager = link_manager
         self.satellite_manager = satellite_manager
         self.etl_service = etl_service
-    
+
     def execute_flow(
         self,
         source_table: str,
@@ -67,7 +68,7 @@ class FlowExecutor:
     ) -> List[Tuple[str, str]]:
         """
         Execute a complete Data Vault loading flow.
-        
+
         Args:
             source_table: Name of the source table to use
             record_source: Data Vault run source identifier
@@ -75,35 +76,37 @@ class FlowExecutor:
             load_date_overwrite: Optional date string to use instead of current timestamp
             force_load: Whether to load the file even if already processed
             verbose: Whether to print additional information during execution
-            
+
         Returns:
             List of (SQL, error) tuples if errors occurred, otherwise empty list
         """
         errors = []
-        
+
         if verbose:
             print(
                 f"{'FORCE ' if force_load else ''}LOAD {source_table} for {record_source} from {file_path}{f' with date overwrite {load_date_overwrite}' if load_date_overwrite else ''}"
             )
-        
+
         # Check if already ingested
         if not force_load and file_path:
             try:
-                if self.metadata_manager.check_previous_ingestion(source_table, file_path, "success"):
+                if self.metadata_manager.check_previous_ingestion(
+                    source_table, file_path, "success"
+                ):
                     if verbose:
                         print(f"File {file_path} already ingested for {source_table}")
                     return errors
             except Exception as ex:
                 errors.append((f"Check previous ingestion for {file_path}", str(ex)))
                 return errors
-        
+
         # Get run ID
         try:
             run_id = self.metadata_manager.get_next_run_id()
         except Exception as ex:
             errors.append(("Get next run ID", str(ex)))
             return errors
-        
+
         # Register run start
         if verbose:
             print("Register run start")
@@ -112,53 +115,54 @@ class FlowExecutor:
                 source_table=source_table,
                 run_id=run_id,
                 file_path=file_path,
-                status="start"
+                status="start",
             )
         except Exception as ex:
             errors.append(("Register run start", str(ex)))
             return errors
-        
+
         # Load file to staging if provided
         if file_path:
             if verbose:
                 print("Check if source table should be loaded")
-            
-            try: 
+
+            try:
                 to_load = self.metadata_manager.check_source_for_ingestion(source_table)
             except Exception as ex:
                 errors.append(("Check source for ingestion", str(ex)))
                 return errors
 
             if verbose:
-                print(f"source {'table' if to_load else 'view'} {source_table} will {'' if to_load else 'not '}be loaded with new data")
+                print(
+                    f"source {'table' if to_load else 'view'} {source_table} will {'' if to_load else 'not '}be loaded with new data"
+                )
 
             if to_load:
                 if verbose:
                     print("Load new data")
                 errors.extend(
                     self.etl_service.load_file_to_staging(
-                        source_table=source_table,
-                        file_path=file_path,
-                        verbose=verbose
+                        source_table=source_table, file_path=file_path, verbose=verbose
                     )
                 )
                 if errors:
-                    self._register_run_end(source_table, run_id, file_path, "failure", errors)
+                    self._register_run_end(
+                        source_table, run_id, file_path, "failure", errors
+                    )
                     return errors
-        
+
         # Compute hash view
         if verbose:
             print("Compute hash view")
         errors.extend(
             self.hash_generator.compute_hash_view(
-                stg_table=source_table,
-                verbose=verbose
+                stg_table=source_table, verbose=verbose
             )
         )
         if errors:
             self._register_run_end(source_table, run_id, file_path, "failure", errors)
             return errors
-        
+
         # Load hubs
         if verbose:
             print("Load hubs")
@@ -168,13 +172,13 @@ class FlowExecutor:
                 run_id=run_id,
                 record_source=record_source,
                 load_date_overwrite=load_date_overwrite,
-                verbose=verbose
+                verbose=verbose,
             )
         )
         if errors:
             self._register_run_end(source_table, run_id, file_path, "failure", errors)
             return errors
-        
+
         # Load links
         if verbose:
             print("Load links")
@@ -184,13 +188,13 @@ class FlowExecutor:
                 run_id=run_id,
                 record_source=record_source,
                 load_date_overwrite=load_date_overwrite,
-                verbose=verbose
+                verbose=verbose,
             )
         )
         if errors:
             self._register_run_end(source_table, run_id, file_path, "failure", errors)
             return errors
-        
+
         # Load satellites
         if verbose:
             print("Load satellites")
@@ -200,32 +204,32 @@ class FlowExecutor:
                 run_id=run_id,
                 record_source=record_source,
                 load_date_overwrite=load_date_overwrite,
-                verbose=verbose
+                verbose=verbose,
             )
         )
-        
+
         # Register run end
         self._register_run_end(
             source_table=source_table,
             run_id=run_id,
             file_path=file_path,
             status="success" if not errors else "failure",
-            errors=errors
+            errors=errors,
         )
-        
+
         return errors
-    
+
     def _register_run_end(
         self,
         source_table: str,
         run_id: int,
         file_path: str,
         status: str,
-        errors: List[Tuple[str, str]] = None
+        errors: List[Tuple[str, str]] = None,
     ) -> None:
         """
         Register the end of a run.
-        
+
         Args:
             source_table: Source table name
             run_id: Run ID
@@ -240,14 +244,14 @@ class FlowExecutor:
                 message += f": {errors[0][1]}"
                 if len(errors) > 1:
                     message += f" and {len(errors) - 1} more"
-        
+
         try:
             self.metadata_manager.register_run_info(
                 source_table=source_table,
                 run_id=run_id,
                 file_path=file_path,
                 status=status,
-                message=message[:4095]  # Limit message length
+                message=message[:4095],  # Limit message length
             )
         except Exception as ex:
             logger.error(f"Failed to register run end: {str(ex)}")

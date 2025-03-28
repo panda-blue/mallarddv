@@ -5,9 +5,9 @@ SQL templates for the MallardDataVault library.
 
 class SQLTemplates:
     """Centralized storage for SQL templates"""
-    
+
     CREATE_SCHEMA = "CREATE SCHEMA IF NOT EXISTS {schema};"
-    
+
     META_TABLES = """
     CREATE TABLE IF NOT EXISTS metadata.tables
     (
@@ -19,7 +19,7 @@ class SQLTemplates:
         mapping VARCHAR
     );
     """
-    
+
     META_TRANSITIONS = """
     CREATE TABLE IF NOT EXISTS metadata.transitions
     (
@@ -34,7 +34,7 @@ class SQLTemplates:
         transfer_type VARCHAR
     );
     """
-    
+
     META_RUNINFO = """
     CREATE TABLE IF NOT EXISTS metadata.runinfo
     (
@@ -46,31 +46,31 @@ class SQLTemplates:
         message VARCHAR
     );
     """
-    
+
     GET_TRANSITIONS = """
-    SELECT 
-        source_table, source_field, target_table, group_name, 
-        target_field, position, raw, transfer_type, transformation 
+    SELECT
+        source_table, source_field, target_table, group_name,
+        target_field, position, raw, transfer_type, transformation
     FROM metadata.transitions
     WHERE source_table = ?
     ORDER BY source_table, target_table, group_name, position
     """
-    
+
     GET_TABLES = """
-    SELECT 
-        base_name, rel_type, column_name, column_type, 
+    SELECT
+        base_name, rel_type, column_name, column_type,
         column_position, mapping
     FROM metadata.tables
     {where_clause}
     ORDER BY rel_type, base_name, mapping, column_position
     """
-    
+
     CHECK_INGESTION = """
-    SELECT 
-        TRUE AS already_ingested 
-    FROM metadata.runinfo 
-    WHERE source_file = ? 
-    AND source_table = ? 
+    SELECT
+        TRUE AS already_ingested
+    FROM metadata.runinfo
+    WHERE source_file = ?
+    AND source_table = ?
     AND status = ?
     """
 
@@ -82,18 +82,18 @@ class SQLTemplates:
     ORDER BY 1 ASC
     LIMIT 1
     """
-    
+
     GET_RUN_ID = """
-    SELECT 
-        COALESCE(MAX(run_id), 0) + 1 AS run_id 
+    SELECT
+        COALESCE(MAX(run_id), 0) + 1 AS run_id
     FROM metadata.runinfo
     """
-    
+
     INSERT_RUNINFO = """
-    INSERT INTO metadata.runinfo 
+    INSERT INTO metadata.runinfo
     VALUES (?, ?, ?, ?, ?, ?)
     """
-    
+
     # Hub SQL templates
     CREATE_HUB = """
     CREATE TABLE IF NOT EXISTS dv.hub_{base_name} (
@@ -104,7 +104,7 @@ class SQLTemplates:
         {business_keys}
     )
     """
-    
+
     # Link SQL templates
     CREATE_LINK = """
     CREATE TABLE IF NOT EXISTS dv.{table_type}_{table_base_name} (
@@ -115,7 +115,7 @@ class SQLTemplates:
         {columns}
     )
     """
-    
+
     # Satellite SQL templates
     CREATE_SAT = """
     CREATE TABLE IF NOT EXISTS dv.{table_type}_{table_base_name} (
@@ -128,7 +128,7 @@ class SQLTemplates:
         {fields}
     )
     """
-    
+
     CREATE_CURRENT_VIEW = """
     CREATE OR REPLACE VIEW bv.{table_type}_{table_base_name}_cv as
     select
@@ -154,14 +154,14 @@ class SQLTemplates:
         where x.r = 1
     ;
     """
-    
+
     # Staging SQL templates
     CREATE_STAGING_TABLE = """
     CREATE TABLE IF NOT EXISTS stg.{base_name} (
         {columns}
     )
     """
-    
+
     # Hash view SQL template
     CREATE_HASH_VIEW = """
     CREATE OR REPLACE VIEW stg.{stg_table}_hash_vw AS
@@ -175,7 +175,7 @@ class SQLTemplates:
         {combined}
     from cte)
     """
-    
+
     # Hub loading SQL template
     INSERT_HUB = """
     INSERT into dv.{hub_name}
@@ -195,7 +195,7 @@ class SQLTemplates:
         WHERE hub.{hub_hash_key} IS NULL
     ) AS SUB;
     """
-    
+
     # Link loading SQL template
     INSERT_LINK = """
     INSERT INTO dv.{link_name}
@@ -214,7 +214,7 @@ class SQLTemplates:
         WHERE link.{link_hashkey} is null
     ) AS SUB;
     """
-    
+
     # Satellite loading SQL templates
     INSERT_SAT_NEW = """
     INSERT INTO dv.{sat_name} (
@@ -249,7 +249,7 @@ class SQLTemplates:
                 and lr_hashdiff.del_flag = False
         );
     """
-    
+
     INSERT_SAT_DELETE = """
     INSERT INTO dv.{sat_name} (
         {sat_hashkey},

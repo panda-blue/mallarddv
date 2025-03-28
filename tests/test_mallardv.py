@@ -133,8 +133,8 @@ class TestMallardDataVault:
 
         # Check that the SQL call was made with the correct parameters
         called_sql = mdv.db.real_db.sql.call_args[0][0]
-        called_params = mdv.db.real_db.sql.call_args[1].get('params')
-        
+        called_params = mdv.db.real_db.sql.call_args[1].get("params")
+
         # With our refactoring, we now use parameterized queries
         assert "metadata.transitions" in called_sql
         assert "WHERE source_table = ?" in called_sql
@@ -150,7 +150,7 @@ class TestMallardDataVault:
 
         # Check SQL doesn't have WHERE clause
         called_sql = mdv.db.real_db.sql.call_args[0][0]
-        called_params = mdv.db.real_db.sql.call_args[1].get('params')
+        called_params = mdv.db.real_db.sql.call_args[1].get("params")
         assert "WHERE" not in called_sql
         assert called_params is None or called_params == []
 
@@ -160,7 +160,7 @@ class TestMallardDataVault:
 
         # Check SQL has WHERE with base_name and params
         called_sql = mdv.db.real_db.sql.call_args[0][0]
-        called_params = mdv.db.real_db.sql.call_args[1].get('params')
+        called_params = mdv.db.real_db.sql.call_args[1].get("params")
         assert "WHERE" in called_sql
         assert "base_name = ?" in called_sql
         assert called_params == ["test_base"]
@@ -171,7 +171,7 @@ class TestMallardDataVault:
 
         # Check SQL has WHERE with rel_type and params
         called_sql = mdv.db.real_db.sql.call_args[0][0]
-        called_params = mdv.db.real_db.sql.call_args[1].get('params')
+        called_params = mdv.db.real_db.sql.call_args[1].get("params")
         assert "WHERE" in called_sql
         assert "rel_type = ?" in called_sql
         assert called_params == ["hub"]
@@ -182,7 +182,7 @@ class TestMallardDataVault:
 
         # Check SQL has WHERE with both conditions and params
         called_sql = mdv.db.real_db.sql.call_args[0][0]
-        called_params = mdv.db.real_db.sql.call_args[1].get('params')
+        called_params = mdv.db.real_db.sql.call_args[1].get("params")
         assert "WHERE" in called_sql
         assert "base_name = ?" in called_sql
         assert "AND" in called_sql
@@ -238,8 +238,12 @@ class TestMallardDataVault:
             },
         ]
 
-        with patch.object(mdv.metadata_manager, "get_transitions", return_value=mock_records):
-            with patch.object(mdv.hash_generator, "hash_fields", return_value="HASH_EXPRESSION"):
+        with patch.object(
+            mdv.metadata_manager, "get_transitions", return_value=mock_records
+        ):
+            with patch.object(
+                mdv.hash_generator, "hash_fields", return_value="HASH_EXPRESSION"
+            ):
                 # Call the method
                 mdv.compute_hash_view("test_table")
 
@@ -275,7 +279,9 @@ class TestMallardDataVault:
             }
         ]
 
-        with patch.object(mdv.metadata_manager, "get_transitions", return_value=mock_records):
+        with patch.object(
+            mdv.metadata_manager, "get_transitions", return_value=mock_records
+        ):
             mdv.load_related_hubs("test_table", 123, "TEST_SOURCE")
 
             # Check SQL contains INSERT INTO statement
@@ -298,7 +304,9 @@ class TestMallardDataVault:
             }
         ]
 
-        with patch.object(mdv.metadata_manager, "get_tables", return_value=mock_records):
+        with patch.object(
+            mdv.metadata_manager, "get_tables", return_value=mock_records
+        ):
             mdv.create_hub_from_metadata()
 
             # Check SQL contains CREATE TABLE statement
