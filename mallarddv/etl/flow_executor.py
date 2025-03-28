@@ -130,7 +130,7 @@ class FlowExecutor:
                 return errors
 
             if verbose:
-                print(f"source {'table' if to_load else 'view'} {source_table} will {'' if to_load else 'not '}loaded with new data")
+                print(f"source {'table' if to_load else 'view'} {source_table} will {'' if to_load else 'not '}be loaded with new data")
 
             if to_load:
                 if verbose:
