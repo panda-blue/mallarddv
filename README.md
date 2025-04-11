@@ -1,4 +1,4 @@
-# 🦆 MallardDV - A Portable Data Vault
+# <img src="img/mallard-sq.svg" alt="🦆" width="40"/> MallardDV - A Portable Data Vault
 
 A lightweight Python implementation of a Data Vault data warehouse pattern using DuckDB.
 
